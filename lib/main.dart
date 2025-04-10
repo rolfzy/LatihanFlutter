@@ -1,14 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+import 'package:statemanajemen/animation_playground.dart';
 import 'package:statemanajemen/counter_model.dart';
-import 'package:statemanajemen/login_form.dart';
-import 'package:statemanajemen/networking_example.dart';
-import 'package:statemanajemen/todo_app.dart';
+import 'package:workmanager/workmanager.dart';
 
-void main() {
-  runApp(MyApp());
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) {
+    print('Tugas latar belakang dijalankan:$task');
+    return Future.value(true);
+  });
 }
 
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: true);
+  Workmanager().registerPeriodicTask(
+    "simplePeriodicTask",
+    "simpleTask",
+    initialDelay: Duration(seconds: 5),
+    frequency: Duration(minutes: 15),
+    constraints: Constraints(networkType: NetworkType.connected),
+  );
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -16,15 +32,35 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (context) => Counter(), // Membuat instance dari Counter
       child: MaterialApp(
-        title: 'Flutter Provider Demo',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: TodoApp()
+        title: 'Simple Notes App',
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [const Locale('id'), const Locale('en')],
+        localeResolutionCallback: (locale, supportedLocales) {
+          for (var supportedLocaled in supportedLocales) {
+            if (supportedLocaled.languageCode == locale?.languageCode &&
+                supportedLocaled.countryCode == locale?.countryCode) {
+              return supportedLocaled;
+            }
+          }
+          return supportedLocales.first;
+        },
+
+        theme: ThemeData(primarySwatch: Colors.blue),
+        home: AnimationPlayground(),
+
+        // ExplicitAnimation()
+        // AnimationExample()
+        // NoteMainScreen()
+        // LocalStorageExample()
+        // TodoApp()
         // NetworkingExample(),
         // MyHomePage(title: 'Flutter Provider Demo Home Page'),
       ),
-
     );
   }
 }
